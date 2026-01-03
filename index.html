@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจระเบียบ - สวนศรีวิทยา</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; }
+        .checkbox-card { transition: all 0.2s; }
+        .checkbox-card:hover { transform: translateY(-2px); }
+        /* ซ่อน Checkbox เดิม แล้วตกแต่ง Label แทน */
+        .custom-checkbox:checked + div {
+            background-color: #fee2e2; 
+            border-color: #ef4444; 
+            color: #991b1b;
+        }
+        .custom-checkbox:checked + div .icon-check {
+            display: block;
+        }
+        .hidden { display: none !important; }
+        
+        /* Animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="h-full text-gray-800">
+
+    <div id="loginModal" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl relative overflow-hidden border-t-8 border-green-600 animate-fade-in">
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-4 text-green-700"><i class="fa-solid fa-school"></i></div>
+                <h2 class="text-3xl font-bold text-green-800">เข้าสู่ระบบ</h2>
+                <p class="text-gray-500">ระบบตรวจระเบียบวินัยนักเรียน</p>
+            </div>
+
+            <div class="flex bg-gray-100 p-1 rounded-xl mb-6 shadow-inner">
+                <button onclick="App.switchRole('teacher')" id="tabTeacher" class="flex-1 py-3 rounded-lg text-sm font-bold transition-all bg-white text-green-700 shadow-sm">ครู / ฝ่ายปกครอง</button>
+                <button onclick="App.switchRole('student')" id="tabStudent" class="flex-1 py-3 rounded-lg text-sm font-bold transition-all text-gray-500 hover:text-gray-700">นักเรียน</button>
+            </div>
+
+            <form onsubmit="App.login(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อผู้ใช้งาน / เลขประจำตัว</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-gray-400"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="username" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-lg transition-all" required placeholder="ระบุข้อมูล...">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">รหัสผ่าน</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="password" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-lg transition-all" required placeholder="••••••">
+                    </div>
+                    <p id="studentHint" class="text-xs text-green-600 mt-2 hidden bg-green-50 p-2 rounded border border-green-200"><i class="fa-solid fa-circle-info"></i> นักเรียนใช้เลขประจำตัวเป็นรหัสผ่าน</p>
+                </div>
+                <button type="submit" id="btnLogin" class="w-full bg-gradient-to-r from-green-700 to-green-600 hover:from-green-800 hover:to-green-700 text-white font-bold py-4 rounded-xl shadow-lg text-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
+                    <span>เข้าสู่ระบบ</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mainApp" class="hidden min-h-screen flex flex-col">
+        <header class="bg-gradient-to-r from-green-800 to-green-600 text-white shadow-lg sticky top-0 z-40">
+            <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+                        <i class="fa-solid fa-clipboard-check text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight">ระบบตรวจระเบียบ</h1>
+                        <p id="userDisplay" class="text-xs text-green-100 opacity-90">-</p>
+                    </div>
+                </div>
+                <button onclick="location.reload()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm font-bold backdrop-blur-sm transition-all border border-white/20">
+                    <i class="fa-solid fa-power-off"></i> ออกจากระบบ
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-3xl mx-auto w-full p-4 space-y-6 pb-20">
+            
+            <section id="viewTeacher" class="hidden space-y-6 animate-fade-in">
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <label class="block font-bold text-gray-700 mb-3 text-lg"><i class="fa-solid fa-magnifying-glass text-green-600 mr-2"></i>ตรวจนักเรียน (ระบุเลขประจำตัว)</label>
+                    <div class="flex gap-2">
+                        <input type="tel" id="inpSearchId" maxlength="6" class="flex-1 text-3xl font-bold tracking-widest text-center border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none py-3 text-gray-700 placeholder-gray-200 transition-all" placeholder="000000">
+                    </div>
+                    <button onclick="Teacher.prepareCheck()" class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-lg shadow transition-colors flex justify-center items-center gap-2">
+                        เริ่มตรวจ <i class="fa-solid fa-play"></i>
+                    </button>
+                </div>
+
+                <div id="checkForm" class="hidden bg-white p-6 rounded-2xl shadow-xl border-t-8 border-yellow-400 animate-fade-in">
+                    <div class="flex justify-between items-start mb-6 pb-4 border-b">
+                        <div>
+                            <h2 id="dspStudentName" class="text-xl font-bold text-gray-800">กำลังระบุตัวตน...</h2>
+                            <p id="dspStudentId" class="text-gray-500 font-mono text-base mt-1 bg-gray-100 inline-block px-2 rounded">ID: -</p>
+                        </div>
+                        <button onclick="document.getElementById('checkForm').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                    </div>
+
+                    <div id="teacherGallery" class="hidden mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                        <h3 class="text-sm font-bold text-gray-500 mb-2"><i class="fa-regular fa-images"></i> รูปถ่ายที่นักเรียนอัปโหลด</h3>
+                        <div id="galleryContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                    </div>
+
+                    <div class="bg-red-50/60 p-5 rounded-xl border border-red-100 mb-6">
+                        <div class="flex items-center gap-2 mb-4 text-red-800 font-bold text-lg">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <h3>ติ๊กรายการที่ผิดระเบียบ</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_hair" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">💇‍♂️</span>
+                                    <span class="font-bold text-gray-600 text-sm">ผม/ทรงผม</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_moustache" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">🥸</span>
+                                    <span class="font-bold text-gray-600 text-sm">หนวด/เครา</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_shirt" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">👔</span>
+                                    <span class="font-bold text-gray-600 text-sm">เสื้อ</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_pants" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">👖</span>
+                                    <span class="font-bold text-gray-600 text-sm">กางเกง/กระโปรง</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_belt" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">➖</span> 
+                                    <span class="font-bold text-gray-600 text-sm">เข็มขัด</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_socks" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">🧦</span>
+                                    <span class="font-bold text-gray-600 text-sm">ถุงเท้า</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_shoes" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">👟</span>
+                                    <span class="font-bold text-gray-600 text-sm">รองเท้า</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_nails" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">💅</span>
+                                    <span class="font-bold text-gray-600 text-sm">เล็บยาว/สี</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_accessories" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">💍</span>
+                                    <span class="font-bold text-gray-600 text-sm">เครื่องประดับ</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer group relative">
+                                <input type="checkbox" id="chk_makeup" class="custom-checkbox sr-only">
+                                <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
+                                    <span class="text-3xl">💄</span>
+                                    <span class="font-bold text-gray-600 text-sm">แต่งหน้า</span>
+                                    <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block font-bold text-gray-700 mb-2"><i class="fa-solid fa-pen"></i> หมายเหตุ / การตักเตือน</label>
+                        <textarea id="inpNote" rows="2" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-green-500 focus:outline-none" placeholder="เช่น ผิดระเบียบครั้งที่ 1..."></textarea>
+                    </div>
+
+                    <button onclick="Teacher.notChecked()" class="w-full mb-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 rounded-xl font-bold text-lg shadow-md border-b-4 border-yellow-600 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-slash"></i> ยังไม่ได้ตรวจ / ขาดเรียน
+                    </button>
+
+                    <div class="flex gap-4 pt-2">
+                        <button onclick="Teacher.submit(true)" id="btnPass" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg border-b-4 border-green-700 transition-transform active:scale-95 flex items-center justify-center gap-2 transition-all duration-300">
+                            <i class="fa-solid fa-check-circle"></i> ผ่าน
+                        </button>
+                        <button onclick="Teacher.submit(false)" id="btnFail" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg border-b-4 border-red-700 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-xmark"></i> ไม่ผ่าน
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="viewStudent" class="hidden space-y-6 animate-fade-in">
+                
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-green-800"><i class="fa-solid fa-camera mr-2"></i>อัปโหลดรูปแต่งกาย</h2>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition relative">
+                            <input type="file" id="inpStudentFiles" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="Student.previewImages(event)">
+                            <div class="text-gray-400">
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl mb-2"></i>
+                                <p>แตะเพื่อเลือกรูปภาพ (เลือกได้หลายรูป)</p>
+                            </div>
+                        </div>
+                        
+                        <div id="previewContainer" class="grid grid-cols-3 gap-2"></div>
+
+                        <button onclick="Student.uploadImages()" id="btnUpload" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-upload"></i> ยืนยันการส่งรูป
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <div class="flex items-center justify-between mb-6 border-b pb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-green-800"><i class="fa-solid fa-clock-rotate-left mr-2"></i>ประวัติการตรวจ</h2>
+                            <p class="text-sm text-gray-500">บันทึกความประพฤติล่าสุด</p>
+                        </div>
+                    </div>
+                    <div id="historyList" class="space-y-4">
+                        <div class="text-center py-12 text-gray-400">
+                            <i class="fa-solid fa-spinner fa-spin text-3xl mb-3"></i>
+                            <p>กำลังโหลดข้อมูล...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // ==============================================
+        // 🚨 สำคัญ: วาง URL ของ Apps Script ตรงนี้ 🚨
+        // ==============================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbxA2jmf3QTKOvGKBFnxYG1WbvRqrkH_y2kFYpKkWykuUXEYdIMb_YqKOUxhBsGxC3dM/exec"; 
+        // ==============================================
+
+        // ฟังก์ชันย่อรูป (ลดขนาดไฟล์ก่อนส่ง)
+        const resizeImage = (file) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                }
+            };
+        });
+
+        // ฟังก์ชันจัดการ UI ปุ่ม (Real-time)
+        function updateButtonState() {
+            const checkboxes = document.querySelectorAll('.custom-checkbox');
+            let isAnyChecked = false;
+            checkboxes.forEach(chk => { if (chk.checked) isAnyChecked = true; });
+
+            const btnPass = document.getElementById('btnPass');
+            const btnFail = document.getElementById('btnFail');
+
+            if (isAnyChecked) {
+                btnPass.classList.add('hidden');
+                btnPass.classList.remove('flex');
+                btnFail.classList.remove('flex-1');
+                btnFail.classList.add('w-full');
+            } else {
+                btnPass.classList.remove('hidden');
+                btnPass.classList.add('flex');
+                btnFail.classList.add('flex-1');
+                btnFail.classList.remove('w-full');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.custom-checkbox').forEach(chk => {
+                chk.addEventListener('change', updateButtonState);
+            });
+        });
+
+        // Application Logic
+        const App = {
+            role: 'teacher',
+            user: null,
+
+            switchRole(role) {
+                this.role = role;
+                const active = "flex-1 py-3 rounded-lg text-sm font-bold transition-all bg-white text-green-700 shadow-md transform scale-105 border border-green-100";
+                const inactive = "flex-1 py-3 rounded-lg text-sm font-bold transition-all text-gray-500 hover:bg-gray-200/50";
+                document.getElementById('tabTeacher').className = role === 'teacher' ? active : inactive;
+                document.getElementById('tabStudent').className = role === 'student' ? active : inactive;
+                document.getElementById('studentHint').classList.toggle('hidden', role !== 'student');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('username').placeholder = role === 'teacher' ? "ชื่อผู้ใช้" : "เลขประจำตัว";
+                document.getElementById('password').placeholder = role === 'teacher' ? "รหัสผ่าน" : "เลขประจำตัวอีกครั้ง";
+            },
+
+            async login(e) {
+                e.preventDefault();
+                const btn = document.getElementById('btnLogin');
+                const user = document.getElementById('username').value.trim();
+                const pass = document.getElementById('password').value.trim();
+                
+                if(!user || !pass) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูล', 'warning');
+
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังตรวจสอบ...';
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_URL}?action=login&username=${user}&password=${pass}&role=${this.role}`);
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        this.user = data;
+                        document.getElementById('loginModal').classList.add('hidden');
+                        document.getElementById('mainApp').classList.remove('hidden');
+                        document.getElementById('userDisplay').innerHTML = `<span class="font-bold text-white">${this.user.name}</span><br><span class="text-green-200 text-xs">${this.role === 'teacher' ? 'ครู/ผู้ตรวจ' : 'นักเรียน'}</span>`;
+                        
+                        if(this.role === 'teacher') {
+                            document.getElementById('viewTeacher').classList.remove('hidden');
+                            document.getElementById('inpSearchId').focus();
+                        } else {
+                            document.getElementById('viewStudent').classList.remove('hidden');
+                            Student.loadHistory();
+                        }
+                    } else {
+                        Swal.fire('เข้าสู่ระบบไม่สำเร็จ', data.message, 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'เชื่อมต่อไม่ได้', 'error');
+                } finally {
+                    btn.innerHTML = 'เข้าสู่ระบบ <i class="fa-solid fa-arrow-right"></i>';
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        const Teacher = {
+            currentStudentId: null,
+
+            async prepareCheck() {
+                const id = document.getElementById('inpSearchId').value.trim();
+                if(id.length < 3) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสนักเรียน', 'warning');
+
+                Swal.fire({ title: 'กำลังโหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                try {
+                    const res = await fetch(`${API_URL}?action=checkStudent&id=${id}`);
+                    const data = await res.json();
+
+                    if (data.status === 'success') {
+                        Swal.close();
+                        this.currentStudentId = data.id;
+                        document.getElementById('dspStudentId').innerText = `ID: ${data.id}`;
+                        document.getElementById('dspStudentName').innerText = data.name;
+                        
+                        // Gallery (โชว์รูป)
+                        const gallery = document.getElementById('teacherGallery');
+                        const container = document.getElementById('galleryContainer');
+                        container.innerHTML = '';
+                        if(data.photos && data.photos.length > 0) {
+                            gallery.classList.remove('hidden');
+                            data.photos.forEach(url => {
+                                container.innerHTML += `<a href="${url}" target="_blank" class="block aspect-square rounded-lg overflow-hidden border bg-white"><img src="${url}" class="w-full h-full object-cover"></a>`;
+                            });
+                        } else {
+                            gallery.classList.add('hidden');
+                        }
+
+                        // Reset UI
+                        document.querySelectorAll('.custom-checkbox').forEach(c => c.checked = false);
+                        document.getElementById('inpNote').value = '';
+                        updateButtonState();
+
+                        document.getElementById('checkForm').classList.remove('hidden');
+                        setTimeout(() => document.getElementById('checkForm').scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'ไม่พบนักเรียน' });
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'เชื่อมต่อไม่ได้', 'error');
+                }
+            },
+
+            async notChecked() {
+                const { value: reason } = await Swal.fire({
+                    title: 'ระบุสาเหตุ', input: 'text', inputPlaceholder: 'เช่น ขาดเรียน, ลาป่วย',
+                    showCancelButton: true, confirmButtonText: 'บันทึก', confirmButtonColor: '#eab308',
+                    inputValidator: (val) => !val && 'กรุณาระบุสาเหตุ'
+                });
+                if (reason) this.submit('skip', reason);
+            },
+
+            async submit(status, reason = '') {
+                const checks = {
+                    hair: document.getElementById('chk_hair').checked,
+                    moustache: document.getElementById('chk_moustache').checked,
+                    shirt: document.getElementById('chk_shirt').checked,
+                    pants: document.getElementById('chk_pants').checked,
+                    belt: document.getElementById('chk_belt').checked,
+                    socks: document.getElementById('chk_socks').checked,
+                    shoes: document.getElementById('chk_shoes').checked,
+                    nails: document.getElementById('chk_nails').checked,
+                    accessories: document.getElementById('chk_accessories').checked,
+                    makeup: document.getElementById('chk_makeup').checked,
+                };
+
+                const isAnyChecked = Object.values(checks).some(Boolean);
+                if (status === false && !isAnyChecked) {
+                    return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาติ๊กเลือกรายการที่ผิดระเบียบ' });
+                }
+
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                let statusStr = status === false ? 'fail' : (status === 'skip' ? 'skip' : 'pass');
+                const payload = {
+                    action: 'saveCheck',
+                    student_id: this.currentStudentId,
+                    name: document.getElementById('dspStudentName').innerText,
+                    status: statusStr, reason: reason, ...checks,
+                    note: document.getElementById('inpNote').value,
+                    checker: App.user.name
+                };
+
+                try {
+                    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        let msg = `คะแนนคงเหลือ: ${data.score}`;
+                        if(statusStr === 'fail') msg = `ถูกตัดคะแนน! คงเหลือ: ${data.score}`;
+                        if(statusStr === 'skip') msg = `สถานะ: ${reason} (คะแนน: ${data.score})`;
+                        
+                        Swal.fire({ title: 'บันทึกสำเร็จ', text: msg, icon: 'success', timer: 3000, showConfirmButton: false });
+                        
+                        document.getElementById('checkForm').classList.add('hidden');
+                        document.getElementById('inpSearchId').value = '';
+                        document.getElementById('inpSearchId').focus();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+                }
+            }
+        };
+
+        const Student = {
+            selectedFiles: [],
+            previewImages(e) {
+                this.selectedFiles = Array.from(e.target.files);
+                const container = document.getElementById('previewContainer');
+                container.innerHTML = '';
+                this.selectedFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => container.innerHTML += `<div class="aspect-square bg-gray-100 rounded-lg overflow-hidden border"><img src="${ev.target.result}" class="w-full h-full object-cover"></div>`;
+                    reader.readAsDataURL(file);
+                });
+            },
+            async uploadImages() {
+                if(this.selectedFiles.length === 0) return Swal.fire('เตือน', 'เลือกรูปภาพก่อน', 'warning');
+                const btn = document.getElementById('btnUpload');
+                btn.disabled = true; btn.innerHTML = 'กำลังอัปโหลด...';
+                
+                try {
+                    const base64Images = await Promise.all(this.selectedFiles.map(file => resizeImage(file)));
+                    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'uploadImages', id: App.user.id, images: base64Images }) });
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        Swal.fire('สำเร็จ', 'ส่งรูปเรียบร้อย', 'success');
+                        this.selectedFiles = [];
+                        document.getElementById('previewContainer').innerHTML = '';
+                        document.getElementById('inpStudentFiles').value = '';
+                    } else {
+                        Swal.fire('ผิดพลาด', 'อัปโหลดไม่สำเร็จ', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'ไฟล์ใหญ่เกินไปหรือเน็ตหลุด', 'error');
+                } finally {
+                    btn.disabled = false; btn.innerHTML = 'ยืนยันการส่งรูป';
+                }
+            },
+            async loadHistory() {
+                try {
+                    const res = await fetch(`${API_URL}?action=getHistory&id=${App.user.id}`);
+                    const json = await res.json();
+                    const container = document.getElementById('historyList');
+                    if(json.data && json.data.length > 0) {
+                        container.innerHTML = json.data.map(item => {
+                            const dateObj = new Date(item.date);
+                            const isPass = item.status === 'ผ่าน';
+                            const color = isPass ? 'bg-green-50 text-green-700' : (item.status === 'ไม่ผ่าน' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700');
+                            const icon = isPass ? 'fa-check-circle' : (item.status === 'ไม่ผ่าน' ? 'fa-circle-xmark' : 'fa-user-clock');
+                            return `<div class="p-4 rounded-xl border flex items-center gap-4 ${color}"><i class="fa-solid ${icon} text-2xl"></i><div><div class="font-bold">${item.status}</div><div class="text-sm opacity-80">${dateObj.toLocaleDateString('th-TH')} ${dateObj.toLocaleTimeString('th-TH')}</div>${item.note ? `<div class="text-xs mt-1 bg-white/50 px-2 rounded inline-block">${item.note}</div>` : ''}</div></div>`;
+                        }).join('');
+                    } else {
+                        container.innerHTML = `<div class="text-center py-10 text-gray-400">ยังไม่มีประวัติการตรวจ</div>`;
+                    }
+                } catch(e) { console.error(e); }
+            }
+        };
+    </script>
+</body>
+</html>
