@@ -14,18 +14,13 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; }
         .checkbox-card { transition: all 0.2s; }
         .checkbox-card:hover { transform: translateY(-2px); }
-        /* ซ่อน Checkbox เดิม แล้วตกแต่ง Label แทน */
         .custom-checkbox:checked + div {
             background-color: #fee2e2; 
             border-color: #ef4444; 
             color: #991b1b;
         }
-        .custom-checkbox:checked + div .icon-check {
-            display: block;
-        }
+        .custom-checkbox:checked + div .icon-check { display: block; }
         .hidden { display: none !important; }
-        
-        /* Animation */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
     </style>
@@ -90,6 +85,12 @@
             
             <section id="viewTeacher" class="hidden space-y-6 animate-fade-in">
                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <div class="mb-4 bg-green-50 p-4 rounded-xl border border-green-200">
+                        <label class="block font-bold text-green-800 mb-2"><i class="fa-regular fa-calendar-check"></i> เลือกวันที่ทำการตรวจ</label>
+                        <input type="date" id="teacherCheckDate" class="w-full border border-green-300 rounded-lg p-3 text-lg font-bold text-green-700 focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    <hr class="border-gray-200 mb-4">
+
                     <label class="block font-bold text-gray-700 mb-3 text-lg"><i class="fa-solid fa-magnifying-glass text-green-600 mr-2"></i>ตรวจนักเรียน (ระบุเลขประจำตัว)</label>
                     <div class="flex gap-2">
                         <input type="tel" id="inpSearchId" maxlength="6" class="flex-1 text-3xl font-bold tracking-widest text-center border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none py-3 text-gray-700 placeholder-gray-200 transition-all" placeholder="000000">
@@ -108,9 +109,10 @@
                         <button onclick="document.getElementById('checkForm').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
                     </div>
 
-                    <div id="teacherGallery" class="hidden mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                        <h3 class="text-sm font-bold text-gray-500 mb-2"><i class="fa-regular fa-images"></i> รูปถ่ายที่นักเรียนอัปโหลด</h3>
+                    <div id="teacherGallery" class="hidden mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <h3 class="text-sm font-bold text-blue-700 mb-2"><i class="fa-regular fa-images"></i> รูปถ่ายประจำวันที่เลือก</h3>
                         <div id="galleryContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                        <p id="noImageMsg" class="text-center text-gray-400 text-sm hidden">ไม่มีรูปถ่ายในวันนี้</p>
                     </div>
 
                     <div class="bg-red-50/60 p-5 rounded-xl border border-red-100 mb-6">
@@ -152,10 +154,10 @@
                                     <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
                                 </div>
                             </label>
-                            <label class="cursor-pointer group relative">
+                             <label class="cursor-pointer group relative">
                                 <input type="checkbox" id="chk_belt" class="custom-checkbox sr-only">
                                 <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
-                                    <span class="text-3xl">➖</span> 
+                                    <span class="text-3xl">➖</span>
                                     <span class="font-bold text-gray-600 text-sm">เข็มขัด</span>
                                     <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
                                 </div>
@@ -168,7 +170,7 @@
                                     <i class="icon-check fa-solid fa-circle-check absolute top-2 right-2 text-red-500 hidden"></i>
                                 </div>
                             </label>
-                            <label class="cursor-pointer group relative">
+                             <label class="cursor-pointer group relative">
                                 <input type="checkbox" id="chk_shoes" class="custom-checkbox sr-only">
                                 <div class="p-4 border-2 border-white bg-white rounded-xl text-center shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 h-full">
                                     <span class="text-3xl">👟</span>
@@ -230,6 +232,11 @@
                         <h2 class="text-xl font-bold text-green-800"><i class="fa-solid fa-camera mr-2"></i>อัปโหลดรูปแต่งกาย</h2>
                     </div>
                     
+                    <div class="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <label class="block text-sm font-bold text-blue-800 mb-1"><i class="fa-solid fa-calendar-days"></i> เลือกวันที่ส่งงาน</label>
+                        <input type="date" id="studentUploadDate" class="w-full border border-blue-300 rounded-lg p-3 text-lg font-bold text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
                     <div class="space-y-4">
                         <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition relative">
                             <input type="file" id="inpStudentFiles" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="Student.previewImages(event)">
@@ -270,10 +277,15 @@
         // ==============================================
         // 🚨 สำคัญ: วาง URL ของ Apps Script ตรงนี้ 🚨
         // ==============================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxA2jmf3QTKOvGKBFnxYG1WbvRqrkH_y2kFYpKkWykuUXEYdIMb_YqKOUxhBsGxC3dM/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbzJDkU0tQQYcxNLJ51O-_hoN31bCIvJQ4NJVThhgK4SBbEQUOfSbKn1giVA03cGzuWt/exec"; 
         // ==============================================
 
-        // ฟังก์ชันย่อรูป (ลดขนาดไฟล์ก่อนส่ง)
+        // Helper: Set default date to Today
+        const setTodayDate = (id) => {
+            const el = document.getElementById(id);
+            if(el) el.valueAsDate = new Date();
+        }
+
         const resizeImage = (file) => new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -288,12 +300,21 @@
                     canvas.height = img.height * scaleSize;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    resolve(canvas.toDataURL('image/jpeg', 0.6)); 
                 }
             };
         });
 
-        // ฟังก์ชันจัดการ UI ปุ่ม (Real-time)
+        // ฟังก์ชันแก้ลิงก์รูปให้แสดงได้
+        function convertDriveLink(url) {
+            if (!url) return 'https://placehold.co/400?text=No+Image';
+            let fileId = "";
+            if (url.includes('id=')) fileId = url.split('id=')[1].split('&')[0];
+            else if (url.includes('/d/')) fileId = url.match(/\/d\/(.+?)\//)[1];
+            
+            return fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000` : url;
+        }
+
         function updateButtonState() {
             const checkboxes = document.querySelectorAll('.custom-checkbox');
             let isAnyChecked = false;
@@ -303,15 +324,11 @@
             const btnFail = document.getElementById('btnFail');
 
             if (isAnyChecked) {
-                btnPass.classList.add('hidden');
-                btnPass.classList.remove('flex');
-                btnFail.classList.remove('flex-1');
-                btnFail.classList.add('w-full');
+                btnPass.classList.add('hidden'); btnPass.classList.remove('flex');
+                btnFail.classList.remove('flex-1'); btnFail.classList.add('w-full');
             } else {
-                btnPass.classList.remove('hidden');
-                btnPass.classList.add('flex');
-                btnFail.classList.add('flex-1');
-                btnFail.classList.remove('w-full');
+                btnPass.classList.remove('hidden'); btnPass.classList.add('flex');
+                btnFail.classList.add('flex-1'); btnFail.classList.remove('w-full');
             }
         }
         document.addEventListener('DOMContentLoaded', () => {
@@ -320,11 +337,9 @@
             });
         });
 
-        // Application Logic
         const App = {
             role: 'teacher',
             user: null,
-
             switchRole(role) {
                 this.role = role;
                 const active = "flex-1 py-3 rounded-lg text-sm font-bold transition-all bg-white text-green-700 shadow-md transform scale-105 border border-green-100";
@@ -337,7 +352,6 @@
                 document.getElementById('username').placeholder = role === 'teacher' ? "ชื่อผู้ใช้" : "เลขประจำตัว";
                 document.getElementById('password').placeholder = role === 'teacher' ? "รหัสผ่าน" : "เลขประจำตัวอีกครั้ง";
             },
-
             async login(e) {
                 e.preventDefault();
                 const btn = document.getElementById('btnLogin');
@@ -360,9 +374,11 @@
                         
                         if(this.role === 'teacher') {
                             document.getElementById('viewTeacher').classList.remove('hidden');
+                            setTodayDate('teacherCheckDate'); 
                             document.getElementById('inpSearchId').focus();
                         } else {
                             document.getElementById('viewStudent').classList.remove('hidden');
+                            setTodayDate('studentUploadDate'); // Default to Today
                             Student.loadHistory();
                         }
                     } else {
@@ -379,37 +395,66 @@
 
         const Teacher = {
             currentStudentId: null,
-
             async prepareCheck() {
                 const id = document.getElementById('inpSearchId').value.trim();
+                const date = document.getElementById('teacherCheckDate').value;
+                
+                if(!date) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่ตรวจ', 'warning');
                 if(id.length < 3) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสนักเรียน', 'warning');
 
                 Swal.fire({ title: 'กำลังโหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
                 try {
-                    const res = await fetch(`${API_URL}?action=checkStudent&id=${id}`);
+                    const res = await fetch(`${API_URL}?action=checkStudent&id=${id}&date=${date}`);
                     const data = await res.json();
 
                     if (data.status === 'success') {
                         Swal.close();
+                        
+                        // -----------------------------------------------------
+                        // 🚨 Block ทันทีถ้าตรวจไปแล้ว
+                        // -----------------------------------------------------
+                        if (data.already_checked) {
+                            await Swal.fire({
+                                icon: 'error',
+                                title: 'ไม่สามารถตรวจซ้ำได้',
+                                html: `นักเรียนคนนี้ถูกตรวจในวันที่ <b>${new Date(date).toLocaleDateString('th-TH')}</b> แล้ว<br>ผลการตรวจ: <b class="${data.checked_status === 'ผ่าน' ? 'text-green-600' : 'text-red-600'}">${data.checked_status || '-'}</b>`,
+                                confirmButtonText: 'ตกลง',
+                                confirmButtonColor: '#ef4444' // สีแดง
+                            });
+                            document.getElementById('inpSearchId').value = ''; 
+                            return; 
+                        }
+                        // -----------------------------------------------------
+
                         this.currentStudentId = data.id;
                         document.getElementById('dspStudentId').innerText = `ID: ${data.id}`;
                         document.getElementById('dspStudentName').innerText = data.name;
                         
-                        // Gallery (โชว์รูป)
                         const gallery = document.getElementById('teacherGallery');
                         const container = document.getElementById('galleryContainer');
+                        const noImageMsg = document.getElementById('noImageMsg');
                         container.innerHTML = '';
+                        
+                        gallery.classList.remove('hidden');
+                        
                         if(data.photos && data.photos.length > 0) {
-                            gallery.classList.remove('hidden');
+                            noImageMsg.classList.add('hidden');
+                            container.classList.remove('hidden');
                             data.photos.forEach(url => {
-                                container.innerHTML += `<a href="${url}" target="_blank" class="block aspect-square rounded-lg overflow-hidden border bg-white"><img src="${url}" class="w-full h-full object-cover"></a>`;
+                                const safeUrl = convertDriveLink(url);
+                                container.innerHTML += `
+                                <a href="${safeUrl}" target="_blank" class="block aspect-square rounded-lg overflow-hidden border bg-white relative group">
+                                    <img src="${safeUrl}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" 
+                                         onerror="this.src='https://placehold.co/400?text=Error'; this.parentElement.removeAttribute('href');">
+                                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div>
+                                </a>`;
                             });
                         } else {
-                            gallery.classList.add('hidden');
+                            container.classList.add('hidden');
+                            noImageMsg.classList.remove('hidden');
                         }
 
-                        // Reset UI
                         document.querySelectorAll('.custom-checkbox').forEach(c => c.checked = false);
                         document.getElementById('inpNote').value = '';
                         updateButtonState();
@@ -420,7 +465,8 @@
                         Swal.fire({ icon: 'error', title: 'ไม่พบนักเรียน' });
                     }
                 } catch (err) {
-                    Swal.fire('Error', 'เชื่อมต่อไม่ได้', 'error');
+                    console.error(err);
+                    Swal.fire('Error', 'เชื่อมต่อไม่ได้ หรือ รูปภาพมีปัญหา', 'error');
                 }
             },
 
@@ -434,6 +480,9 @@
             },
 
             async submit(status, reason = '') {
+                const date = document.getElementById('teacherCheckDate').value;
+                if(!date) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่', 'warning');
+
                 const checks = {
                     hair: document.getElementById('chk_hair').checked,
                     moustache: document.getElementById('chk_moustache').checked,
@@ -458,6 +507,7 @@
                 const payload = {
                     action: 'saveCheck',
                     student_id: this.currentStudentId,
+                    check_date: date, 
                     name: document.getElementById('dspStudentName').innerText,
                     status: statusStr, reason: reason, ...checks,
                     note: document.getElementById('inpNote').value,
@@ -493,18 +543,29 @@
                 container.innerHTML = '';
                 this.selectedFiles.forEach(file => {
                     const reader = new FileReader();
-                    reader.onload = (ev) => container.innerHTML += `<div class="aspect-square bg-gray-100 rounded-lg overflow-hidden border"><img src="${ev.target.result}" class="w-full h-full object-cover"></div>`;
+                    reader.onload = (ev) => container.innerHTML += `<div class="aspect-square bg-gray-100 rounded-lg overflow-hidden border shadow-sm"><img src="${ev.target.result}" class="w-full h-full object-cover"></div>`;
                     reader.readAsDataURL(file);
                 });
             },
             async uploadImages() {
+                const date = document.getElementById('studentUploadDate').value;
+                if(!date) return Swal.fire('เตือน', 'กรุณาเลือกวันที่ก่อน', 'warning');
                 if(this.selectedFiles.length === 0) return Swal.fire('เตือน', 'เลือกรูปภาพก่อน', 'warning');
+                
                 const btn = document.getElementById('btnUpload');
-                btn.disabled = true; btn.innerHTML = 'กำลังอัปโหลด...';
+                btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังอัปโหลด...';
                 
                 try {
                     const base64Images = await Promise.all(this.selectedFiles.map(file => resizeImage(file)));
-                    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'uploadImages', id: App.user.id, images: base64Images }) });
+                    const res = await fetch(API_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ 
+                            action: 'uploadImages', 
+                            id: App.user.id, 
+                            upload_date: date, 
+                            images: base64Images 
+                        }) 
+                    });
                     const data = await res.json();
                     if(data.status === 'success') {
                         Swal.fire('สำเร็จ', 'ส่งรูปเรียบร้อย', 'success');
@@ -515,9 +576,10 @@
                         Swal.fire('ผิดพลาด', 'อัปโหลดไม่สำเร็จ', 'error');
                     }
                 } catch(err) {
+                    console.error(err);
                     Swal.fire('Error', 'ไฟล์ใหญ่เกินไปหรือเน็ตหลุด', 'error');
                 } finally {
-                    btn.disabled = false; btn.innerHTML = 'ยืนยันการส่งรูป';
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> ยืนยันการส่งรูป';
                 }
             },
             async loadHistory() {
