@@ -412,25 +412,27 @@
                         Swal.close();
                         
                         // ============================================
-                        // 🚨 ส่วนที่แก้ไข: เช็คสถานะการลา 🚨
+                        // ตรวจสอบการซ้ำและสีข้อความสถานะ
                         // ============================================
                         if (data.already_checked) {
-                            // ถ้าสถานะเป็น "ลา" หรือ "ยังไม่ได้ตรวจ" ให้ยอมให้แก้ได้
                             const isLeave = data.checked_status && (data.checked_status.includes("ลา") || data.checked_status.includes("ยังไม่ได้ตรวจ"));
 
                             if (!isLeave) {
-                                // ถ้าเป็น ผ่าน/ไม่ผ่าน ให้บล็อก
+                                // เช็คว่าสถานะเป็นผ่านหรือมีคำว่าไม่ผ่าน เพื่อใส่สีให้ตรง
+                                let statusColor = 'text-yellow-600';
+                                if (data.checked_status === 'ผ่าน') statusColor = 'text-green-600';
+                                else if (data.checked_status.includes('ไม่ผ่าน')) statusColor = 'text-red-600';
+
                                 await Swal.fire({
                                     icon: 'error',
                                     title: 'ไม่สามารถตรวจซ้ำได้',
-                                    html: `นักเรียนคนนี้ถูกตรวจในวันที่ <b>${new Date(date).toLocaleDateString('th-TH')}</b> แล้ว<br>ผลการตรวจ: <b class="${data.checked_status === 'ผ่าน' ? 'text-green-600' : 'text-red-600'}">${data.checked_status || '-'}</b>`,
+                                    html: `นักเรียนคนนี้ถูกตรวจในวันที่ <b>${new Date(date).toLocaleDateString('th-TH')}</b> แล้ว<br>ผลการตรวจ: <b class="${statusColor}">${data.checked_status || '-'}</b>`,
                                     confirmButtonText: 'ตกลง',
                                     confirmButtonColor: '#ef4444' // สีแดง
                                 });
                                 document.getElementById('inpSearchId').value = ''; // เคลียร์ช่อง
                                 return; // จบการทำงานทันที
                             } else {
-                                // ถ้าเป็น "ลา" แจ้งเตือนเล็กน้อยแล้วให้ไปต่อ
                                 Swal.fire({
                                     icon: 'info',
                                     title: 'แก้ไขสถานะการลา',
@@ -607,9 +609,16 @@
                     if(json.data && json.data.length > 0) {
                         container.innerHTML = json.data.map(item => {
                             const dateObj = new Date(item.date);
+                            
+                            // ==========================================
+                            // อัปเดตเงื่อนไขให้เช็คคำว่า "ไม่ผ่าน" (รองรับการมีวงเล็บต่อท้าย)
+                            // ==========================================
                             const isPass = item.status === 'ผ่าน';
-                            const color = isPass ? 'bg-green-50 text-green-700' : (item.status === 'ไม่ผ่าน' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700');
-                            const icon = isPass ? 'fa-check-circle' : (item.status === 'ไม่ผ่าน' ? 'fa-circle-xmark' : 'fa-user-clock');
+                            const isFail = item.status.includes('ไม่ผ่าน');
+                            
+                            const color = isPass ? 'bg-green-50 text-green-700' : (isFail ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700');
+                            const icon = isPass ? 'fa-check-circle' : (isFail ? 'fa-circle-xmark' : 'fa-user-clock');
+                            
                             return `<div class="p-4 rounded-xl border flex items-center gap-4 ${color}"><i class="fa-solid ${icon} text-2xl"></i><div><div class="font-bold">${item.status}</div><div class="text-sm opacity-80">${dateObj.toLocaleDateString('th-TH')} ${dateObj.toLocaleTimeString('th-TH')}</div>${item.note ? `<div class="text-xs mt-1 bg-white/50 px-2 rounded inline-block">${item.note}</div>` : ''}</div></div>`;
                         }).join('');
                     } else {
